@@ -1,2 +1,2 @@
 # KR_Project2
-Knowledge Representation Project 2
+A discussion game as presented for the course Knowledge Representation at the VU Amsterdam.
