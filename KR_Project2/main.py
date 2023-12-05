@@ -1,25 +1,111 @@
 import json
+import networkx as nx
+import tkinter as tk
+import matplotlib
+import matplotlib.pyplot as plt
 
-with open('example-argumentation-framework.json', 'r') as file:
-    data = json.load(file)
+matplotlib.use('TkAgg')
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2Tk)
+from matplotlib.figure import Figure
 
-for key, value in data.items():
-    print(f"Key: {key}, Value: {value}")
+import os
 
-""" The opponent can only choose arguments that attack another argument previously outputted by the proponent. 
-The attacked arguments can be from the previous round, but also from an earlier round.
-The proponent always has to answer with an argument that attacks the argument that the opponent selected in the 
-directly preceding round.
-The opponent is not allowed to use the same argument twice. (The proponent however can.)
-The game is over and a winner selected based on the following conditions:
 
-If the opponent uses an argument previously used by the proponent, then the opponent wins (because he has shown 
-that the proponent contradicts itself).
-If the proponent uses an argument previously used by the opponent, then the opponent wins (for similar reasons 
-as in the previous point).
-If the proponent is unable to make a move, then the opponent wins.
-If the opponent has no choices left, then the proponent wins. """
+def proponent(framework, last_attack, starting_arg):
+    # the starting argument has not been used yet == first round
+    if not framework.nodes[starting_arg]['p_used']:
+        framework.nodes[starting_arg]['p_used'] = True
+        framework.nodes[starting_arg]['status'] = 'in'
+        return True, starting_arg
 
-proponent = player1
-opponent = player2
+    # otherwise, need to attack the last argument from O
 
+    possible_args = list(framework.predecessors(last_attack)) #entering edges
+
+    if len(possible_args) == 0:
+        # no attacks are available, proponent looses
+        print("Proponent cannot attack Opponent's argument, Opponent wins\n")
+        return False, None
+
+    for arg in possible_args:
+        if not framework.nodes[arg]['o_used']:
+            # a valid argument is found, no strategy here
+            framework.nodes[arg]['p_used'] = True
+            framework.nodes[arg]['status'] = 'in'
+            print(f"Proponent states IN: {arg}")
+            return True, arg
+
+    # all possible args have been used by the Opponent, Opponent wins
+    print("Proponent can only choose contradicting arguments, Opponent wins\n")
+    return False, None
+
+
+def available_args(framework):
+    #
+    attacks = []
+    # all arguments that the proponent stated...
+    for n in [x for x, y in framework.nodes(data=True) if y['p_used']]:
+        # ...can be attacked by parent arguments if the argument has not been used yet by the opponent
+        attacks += [e[0] for e in framework.in_edges(n) if not framework.nodes[e[0]]['o_used']]
+
+    return True if len(attacks) > 0 else False, set(attacks)
+
+
+def opponent(framework, human=True):
+    available, args = available_args(framework)
+
+    if not available:
+        # no more available arguments
+        print('Opponent has no options left, Proponent wins\n')
+        return False, None
+
+    if human:
+        arg = input(f"Opponent, please choose an attacking argument among {args}\n")
+        while arg not in args:
+            # if something went wrong with the input
+            arg = input(f"Argument not allowed, please choose an attacking argument among {args}\n")
+
+        if framework.nodes[arg]['p_used']:
+            # an argument is used both by prop and opp
+            print(f'Contradiction found by stating {arg}, Opponent wins\n')
+            return False, None
+
+        framework.nodes[arg]['o_used'] = True
+        framework.nodes[arg]['status'] = 'out'
+        print(f'Opponent states OUT: {arg}')
+
+    return True, arg
+
+
+def game(fname='example-argumentation-framework.json', argument=''):
+    with open(fname, 'r') as file:
+        data = json.load(file)
+
+    for key, value in data.items():
+        print(f"Key: {key}, Value: {value}")
+
+    # create the framework as a directed graph
+    framework = nx.DiGraph()
+    framework.add_edges_from(data['Attack Relations'])
+
+    # initialize all nodes as not used
+    nx.set_node_attributes(framework, False, "p_used")
+    nx.set_node_attributes(framework, False, "o_used")
+
+    #this is not yet used, but ideally it's for adding colors in the graph
+    nx.set_node_attributes(framework, 'u', 'status')
+
+    running = True
+    o_attack = None
+    while running:
+        running, p_argument = proponent(framework, last_attack=o_attack, starting_arg=argument)
+
+        if running:
+            running, o_attack = opponent(framework)
+
+    return
+
+
+game(argument='0')
