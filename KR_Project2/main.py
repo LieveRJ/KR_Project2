@@ -3,6 +3,8 @@ import networkx as nx
 import tkinter as tk
 import matplotlib
 import matplotlib.pyplot as plt
+import random
+import sys
 
 matplotlib.use('TkAgg')
 from matplotlib.backend_bases import key_press_handler
@@ -53,7 +55,11 @@ def available_args(framework):
     return True if len(attacks) > 0 else False, set(attacks)
 
 
-def opponent(framework, human=True):
+# def admissibility(framework, argument):
+    # TODO
+
+
+def opponent(framework, human=False):
     available, args = available_args(framework)
 
     if not available:
@@ -72,6 +78,17 @@ def opponent(framework, human=True):
             print(f'Contradiction found by stating {arg}, Opponent wins\n')
             return False, None
 
+        framework.nodes[arg]['o_used'] = True
+        framework.nodes[arg]['status'] = 'out'
+        print(f'Opponent states OUT: {arg}')
+    else:
+        arg = random.choice(list(args))
+    
+        if framework.nodes[arg]['p_used']:
+            # an argument is used both by prop and opp
+            print(f'Contradiction found by stating {arg}, Opponent wins\n')
+            return False, None
+    
         framework.nodes[arg]['o_used'] = True
         framework.nodes[arg]['status'] = 'out'
         print(f'Opponent states OUT: {arg}')
@@ -108,4 +125,5 @@ def game(fname='example-argumentation-framework.json', argument=''):
     return
 
 
-game(argument='0')
+# game(argument = sys.argv[1])
+game(argument='1')
