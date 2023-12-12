@@ -90,10 +90,6 @@ def available_args(framework):
     return True if len(attacks) > 0 else False, set(attacks)
 
 
-# def admissibility(framework, argument):
-# TODO
-
-
 def opponent(framework, human=False):
     available, args = available_args(framework)
 
