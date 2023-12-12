@@ -16,19 +16,27 @@ import os
 
 
 def dfs(fw, inargs, outargs, last, prop):
+    """
+    Performs a dfs search along the current game branch to see whether the opponent can win
+    :param fw: the involved framework, a nx graph
+    :param inargs: all current arguments labelled in
+    :param outargs: all current arguments labelled out
+    :param last: last attacking (out) argument, only relevant for proponent
+    :param prop: Boolean indicating the turn
+    :return: (Boolean, String) True: the current branch leads to an admissible set, return the chosen move
+    """
     if prop:
-        #cannot pick outargs
+        # cannot pick outargs
         options = set(fw.predecessors(last)).difference(outargs)
         for opt in options:
-            # print(f'\t prop checks {opt}')
             hope, answers = dfs(fw, inargs.union({opt}), outargs, opt, False)
             if hope:
                 return True, opt
-
+        # either no options left, or none is acceptable
         return False, None
     else:
         options = set()
-        #can attack any previous args
+        # can attack any previous args, create a set of options
         for defender in inargs:
             for atk in set(fw.predecessors(defender)):
                 # contradiction found
@@ -37,34 +45,36 @@ def dfs(fw, inargs, outargs, last, prop):
                 # cannot reuse arguments
                 if atk not in outargs:
                     options.add(atk)
-        # print(f'\t\t\t opponent checks: {options}\n')
+
+        # for each option check if proponent can defend it
         for opt in options:
-            hope, answers = dfs(fw, inargs, outargs.union({opt}),opt, True)
+            hope, answers = dfs(fw, inargs, outargs.union({opt}), opt, True)
             if not hope:
-                #propagate the fact that the opponent can win
+                # propagate the fact that the opponent can win
                 return False, None
         # opponent cant attack
         return True, None
+
 
 def proponent(framework, last_attack, starting_arg):
     # the starting argument has not been used yet == first round
     if not framework.nodes[starting_arg]['p_used']:
         framework.nodes[starting_arg]['p_used'] = True
-        framework.nodes[starting_arg]['status'] = 'in'
+        framework.nodes[starting_arg]['label'] = 'in'
         print(f'proponent starts: {starting_arg}\n')
         return True, starting_arg
 
     # otherwise, try to find a winning path
-    inargs = set([node for node in framework.nodes if framework.nodes[node]['status'] == 'in'])
-    outargs = set([node for node in framework.nodes if framework.nodes[node]['status'] == 'out'])
-    hope, response=  dfs(framework, inargs, outargs, last_attack, True)
+    inargs = set([node for node in framework.nodes if framework.nodes[node]['label'] == 'in'])
+    outargs = set([node for node in framework.nodes if framework.nodes[node]['label'] == 'out'])
+    hope, response = dfs(framework, inargs, outargs, last_attack, True)
     if hope:
         framework.nodes[response]['p_used'] = True
-        framework.nodes[response]['status'] = 'in'
+        framework.nodes[response]['label'] = 'in'
         print(f'proponent states IN: {response}\n')
         return True, response
     else:
-        #no hope, pick random
+        # no hope, pick random
         if len(list(framework.predecessors(last_attack))) == 0:
             # no otpions
             print("Proponent can only choose contradicting arguments, Opponent wins\n")
@@ -72,20 +82,19 @@ def proponent(framework, last_attack, starting_arg):
         else:
             response = list(framework.predecessors(last_attack))[0]
             framework.nodes[response]['p_used'] = True
-            framework.nodes[response]['status'] = 'in'
+            framework.nodes[response]['label'] = 'in'
             print(f'proponent states IN: {response}\t ps: no hope here\n')
             return True, response
     # all possible args have been used by the Opponent, Opponent wins
-
 
 
 def available_args(framework):
     #
     attacks = []
     # all arguments that the proponent stated...
-    for n in [x for x, y in framework.nodes(data=True) if y['p_used']]:
+    for n in [x for x, y in framework.nodes(data=True) if y['label'] == 'in']:
         # ...can be attacked by parent arguments if the argument has not been used yet by the opponent
-        attacks += [e[0] for e in framework.in_edges(n) if not framework.nodes[e[0]]['o_used']]
+        attacks += [e[0] for e in framework.in_edges(n) if not framework.nodes[e[0]]['label']=='out']
 
     return True if len(attacks) > 0 else False, set(attacks)
 
@@ -110,7 +119,7 @@ def opponent(framework, human=False):
             return False, None
 
         framework.nodes[arg]['o_used'] = True
-        framework.nodes[arg]['status'] = 'out'
+        framework.nodes[arg]['label'] = 'out'
         print(f'Opponent states OUT: {arg}')
     else:
         arg = random.choice(list(args))
@@ -121,7 +130,7 @@ def opponent(framework, human=False):
             return False, None
 
         framework.nodes[arg]['o_used'] = True
-        framework.nodes[arg]['status'] = 'out'
+        framework.nodes[arg]['label'] = 'out'
         print(f'Opponent states OUT: {arg}')
 
     return True, arg
@@ -143,7 +152,7 @@ def game(fname='examples/xample-argumentation-framework.json', argument='', huma
     nx.set_node_attributes(framework, False, "o_used")
 
     # this is not yet used, but ideally it's for adding colors in the graph
-    nx.set_node_attributes(framework, 'u', 'status')
+    nx.set_node_attributes(framework, 'u', 'label')
 
     running = True
     o_attack = None
@@ -158,5 +167,3 @@ def game(fname='examples/xample-argumentation-framework.json', argument='', huma
 
 # game(argument = sys.argv[1])
 game(fname='examples/example3.json', argument='d')
-
-
