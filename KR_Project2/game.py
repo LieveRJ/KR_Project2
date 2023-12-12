@@ -94,7 +94,7 @@ def available_args(framework):
     # all arguments that the proponent stated...
     for n in [x for x, y in framework.nodes(data=True) if y['label'] == 'in']:
         # ...can be attacked by parent arguments if the argument has not been used yet by the opponent
-        attacks += [e[0] for e in framework.in_edges(n) if not framework.nodes[e[0]]['label']=='out']
+        attacks += [e[0] for e in framework.in_edges(n) if not framework.nodes[e[0]]['label'] == 'out']
 
     return True if len(attacks) > 0 else False, set(attacks)
 
@@ -165,5 +165,22 @@ def game(fname='examples/xample-argumentation-framework.json', argument='', huma
     return
 
 
-# game(argument = sys.argv[1])
-game(fname='examples/example3.json', argument='d')
+if sys.argv[3] == 'play':
+    game(fname=sys.argv[1], argument=sys.argv[2])
+else:
+
+    for fname in os.listdir('./examples'):
+        print(fname)
+        with open(f'./examples/{fname}', 'r') as file:
+            data = json.load(file)
+
+        # create the framework as a directed graph
+        framework = nx.DiGraph()
+        framework.add_edges_from(data['Attack Relations'])
+
+        for arg in data['Proposed arguments'][0]:
+            # reset
+            nx.set_node_attributes(framework, 'u', 'label')
+            framework.nodes[arg]['label'] = 'in'
+            res, _ = dfs(framework, inargs={arg}, outargs=set(), last=arg, prop=False)
+            print(f'framework: {fname}, argument: {arg}, results:{res}')

@@ -1,4 +1,5 @@
 import json
+import os
 
 
 def is_admissible(label):
@@ -100,12 +101,27 @@ def main(arg, args, framework):
 
 #framework_file = input(f'Enter framework file: \n')
 
-framework_file = 'examples/example1.json'
-arg = input(f"Enter an argument: \n")
+# framework_file = 'examples/example1.json'
+# arg = input(f"Enter an argument: \n")
+#
+# with open(framework_file, 'r') as file:
+#     data = json.load(file)
+#
+# args = set(data['Arguments'].keys())
+# framework = data['Attack Relations']
+# main(arg, args, framework)
 
-with open(framework_file, 'r') as file:
-    data = json.load(file)
+for fname in os.listdir('./examples'):
+    print(fname)
+    with open(f'./examples/{fname}', 'r') as file:
+        data = json.load(file)
 
-args = set(data['Arguments'].keys())
-framework = data['Attack Relations']
-main(arg, args, framework)
+    # create the framework as a directed graph
+    args = set(data['Arguments'].keys())
+    framework = data['Attack Relations']
+
+    for arg in data['Proposed arguments'][0]:
+        args = set(data['Arguments'].keys())
+        framework = data['Attack Relations']
+        print(f'framework: {fname}, argument: {arg}')
+        main(arg,args,framework)
