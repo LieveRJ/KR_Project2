@@ -1,3 +1,6 @@
+import json
+
+
 def is_admissible(label):
     propagate(label)
     
@@ -92,8 +95,17 @@ def main(arg, args, framework):
     else:
         print(f"{arg} inadmissible")
 
-args = set(['a', 'b', 'c', 'd', 'e'])
-framework = [('a','b'),('c','b'), ('c','d'), ('d','c'),('d','e'),('e','e')]
+#args = set(['a', 'b', 'c', 'd', 'e'])
+#framework = [('a','b'),('c','b'), ('c','d'), ('d','c'),('d','e'),('e','e')]
 
-arg = input(f"Enter an argument: ")
+#framework_file = input(f'Enter framework file: \n')
+
+framework_file = 'examples/example1.json'
+arg = input(f"Enter an argument: \n")
+
+with open(framework_file, 'r') as file:
+    data = json.load(file)
+
+args = set(data['Arguments'].keys())
+framework = data['Attack Relations']
 main(arg, args, framework)

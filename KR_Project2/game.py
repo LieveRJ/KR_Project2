@@ -15,33 +15,68 @@ from matplotlib.figure import Figure
 import os
 
 
+def dfs(fw, inargs, outargs, last, prop):
+    if prop:
+        #cannot pick outargs
+        options = set(fw.predecessors(last)).difference(outargs)
+        for opt in options:
+            # print(f'\t prop checks {opt}')
+            hope, answers = dfs(fw, inargs.union({opt}), outargs, opt, False)
+            if hope:
+                return True, opt
+
+        return False, None
+    else:
+        options = set()
+        #can attack any previous args
+        for defender in inargs:
+            for atk in set(fw.predecessors(defender)):
+                # contradiction found
+                if atk in inargs:
+                    return False, None
+                # cannot reuse arguments
+                if atk not in outargs:
+                    options.add(atk)
+        # print(f'\t\t\t opponent checks: {options}\n')
+        for opt in options:
+            hope, answers = dfs(fw, inargs, outargs.union({opt}),opt, True)
+            if not hope:
+                #propagate the fact that the opponent can win
+                return False, None
+        # opponent cant attack
+        return True, None
+
 def proponent(framework, last_attack, starting_arg):
     # the starting argument has not been used yet == first round
     if not framework.nodes[starting_arg]['p_used']:
         framework.nodes[starting_arg]['p_used'] = True
         framework.nodes[starting_arg]['status'] = 'in'
+        print(f'proponent starts: {starting_arg}\n')
         return True, starting_arg
 
-    # otherwise, need to attack the last argument from O
-
-    possible_args = list(framework.predecessors(last_attack)) #entering edges
-
-    if len(possible_args) == 0:
-        # no attacks are available, proponent looses
-        print("Proponent cannot attack Opponent's argument, Opponent wins\n")
-        return False, None
-
-    for arg in possible_args:
-        if not framework.nodes[arg]['o_used']:
-            # a valid argument is found, no strategy here
-            framework.nodes[arg]['p_used'] = True
-            framework.nodes[arg]['status'] = 'in'
-            print(f"Proponent states IN: {arg}")
-            return True, arg
-
+    # otherwise, try to find a winning path
+    inargs = set([node for node in framework.nodes if framework.nodes[node]['status'] == 'in'])
+    outargs = set([node for node in framework.nodes if framework.nodes[node]['status'] == 'out'])
+    hope, response=  dfs(framework, inargs, outargs, last_attack, True)
+    if hope:
+        framework.nodes[response]['p_used'] = True
+        framework.nodes[response]['status'] = 'in'
+        print(f'proponent states IN: {response}\n')
+        return True, response
+    else:
+        #no hope, pick random
+        if len(list(framework.predecessors(last_attack))) == 0:
+            # no otpions
+            print("Proponent can only choose contradicting arguments, Opponent wins\n")
+            return False, None
+        else:
+            response = list(framework.predecessors(last_attack))[0]
+            framework.nodes[response]['p_used'] = True
+            framework.nodes[response]['status'] = 'in'
+            print(f'proponent states IN: {response}\t ps: no hope here\n')
+            return True, response
     # all possible args have been used by the Opponent, Opponent wins
-    print("Proponent can only choose contradicting arguments, Opponent wins\n")
-    return False, None
+
 
 
 def available_args(framework):
@@ -56,7 +91,7 @@ def available_args(framework):
 
 
 # def admissibility(framework, argument):
-    # TODO
+# TODO
 
 
 def opponent(framework, human=False):
@@ -83,12 +118,12 @@ def opponent(framework, human=False):
         print(f'Opponent states OUT: {arg}')
     else:
         arg = random.choice(list(args))
-    
+
         if framework.nodes[arg]['p_used']:
             # an argument is used both by prop and opp
             print(f'Contradiction found by stating {arg}, Opponent wins\n')
             return False, None
-    
+
         framework.nodes[arg]['o_used'] = True
         framework.nodes[arg]['status'] = 'out'
         print(f'Opponent states OUT: {arg}')
@@ -96,7 +131,7 @@ def opponent(framework, human=False):
     return True, arg
 
 
-def game(fname='example-argumentation-framework.json', argument=''):
+def game(fname='examples/xample-argumentation-framework.json', argument='', human=True):
     with open(fname, 'r') as file:
         data = json.load(file)
 
@@ -111,7 +146,7 @@ def game(fname='example-argumentation-framework.json', argument=''):
     nx.set_node_attributes(framework, False, "p_used")
     nx.set_node_attributes(framework, False, "o_used")
 
-    #this is not yet used, but ideally it's for adding colors in the graph
+    # this is not yet used, but ideally it's for adding colors in the graph
     nx.set_node_attributes(framework, 'u', 'status')
 
     running = True
@@ -120,10 +155,12 @@ def game(fname='example-argumentation-framework.json', argument=''):
         running, p_argument = proponent(framework, last_attack=o_attack, starting_arg=argument)
 
         if running:
-            running, o_attack = opponent(framework)
+            running, o_attack = opponent(framework, human=human)
 
     return
 
 
 # game(argument = sys.argv[1])
-game(argument='1')
+game(fname='examples/example3.json', argument='d')
+
+
