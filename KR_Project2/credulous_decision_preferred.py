@@ -77,7 +77,7 @@ def credulous_accepted_arguments(label):
         return False
 
 
-def main(arg, args, framework):
+def main(args, framework, arg):
     """
     if the query argument s is self-attacking, then we conclude with arg being
     inadmissible
@@ -106,10 +106,6 @@ def main(arg, args, framework):
     else:
         print('No')
 
-
-# args = set(['a', 'b', 'c', 'd', 'e'])
-# framework = [('a','b'),('b','a'), ('b','c'), ('c','d'),('d','e'),('e','c')]
-
 with open(sys.argv[1], 'r') as file:
     data = json.load(file)
 
@@ -119,6 +115,4 @@ for key, value in data.items():
 args = set(data["Arguments"].keys())
 framework = [(rel[0], rel[1]) for rel in data["Attack Relations"]]
 
-arg = input(f"Enter an argument to check for credulous acceptance: ")
-
-main(arg, args, framework)
+main(args, framework, arg=sys.argv[2])
