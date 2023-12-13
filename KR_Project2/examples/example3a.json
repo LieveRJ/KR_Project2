@@ -1,0 +1,16 @@
+{
+    "Arguments" : {
+        "c": "",
+        "d": "",
+        "e": ""
+    },
+
+    "Attack Relations" : [
+        ["c","d"],
+        ["d","e"], ["e","c"]
+    ],
+
+    "Proposed arguments": [
+      ["c","d","e"]
+    ]
+}

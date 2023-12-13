@@ -166,7 +166,7 @@ def game(fname='examples/example-argumentation-framework.json', argument='', hum
 
 
 
-if sys.argv[2] == 'test':
+if sys.argv[1] == 'test':
     for fname in os.listdir('./examples'):
         print(fname)
         with open(f'./examples/{fname}', 'r') as file:
