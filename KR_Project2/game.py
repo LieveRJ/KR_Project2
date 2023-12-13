@@ -77,7 +77,7 @@ def proponent(framework, last_attack, starting_arg):
         # no hope, pick random
         if len(list(framework.predecessors(last_attack))) == 0:
             # no otpions
-            print("Proponent can only choose contradicting arguments, Opponent wins\n")
+            print("Proponent cannot choose any acceptable argument, Opponent wins\n")
             return False, None
         else:
             response = list(framework.predecessors(last_attack))[0]
@@ -136,7 +136,7 @@ def opponent(framework, human=False):
     return True, arg
 
 
-def game(fname='examples/xample-argumentation-framework.json', argument='', human=True):
+def game(fname='examples/example-argumentation-framework.json', argument='', human=True):
     with open(fname, 'r') as file:
         data = json.load(file)
 
@@ -165,10 +165,8 @@ def game(fname='examples/xample-argumentation-framework.json', argument='', huma
     return
 
 
-if sys.argv[3] == 'play':
-    game(fname=sys.argv[1], argument=sys.argv[2])
-else:
 
+if sys.argv[2] == 'test':
     for fname in os.listdir('./examples'):
         print(fname)
         with open(f'./examples/{fname}', 'r') as file:
@@ -184,3 +182,7 @@ else:
             framework.nodes[arg]['label'] = 'in'
             res, _ = dfs(framework, inargs={arg}, outargs=set(), last=arg, prop=False)
             print(f'framework: {fname}, argument: {arg}, results:{res}')
+
+
+else:
+    game(fname=sys.argv[1], argument=sys.argv[2])
