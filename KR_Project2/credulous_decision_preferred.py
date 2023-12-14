@@ -8,28 +8,24 @@ def is_admissible(label):
     if all(label[x] != 'mustOut' for x in label):
         return True
 
-    # Check if label is hopeless.
+    # Checks if label is hopeless then returns false.
     for x in label:
         if label[x] == 'mustOut' and all(label[y] in {'out', 'mustOut', 'und'} for y in [attacker for (attacker, attacked) in framework if attacked == x]):
             return False
 
-    # label1 ← label
     label1 = label.copy()
 
     # select some x ∈ {y | label(y) = mustOut} − with label(x) = blank.
-    #x = [y for y in label if label[y] == 'mustOut' and label1[x] == 'blank']
     # should work if not hopeless
     x = [attacker for (attacker, attacked) in framework if label[attacked] == 'mustOut' and label[attacker] == 'blank'][0]
     if x:
         in_trans(label1, x[0])
 
-        # if isAdmissible(label1)=true then return true.
         if is_admissible(label1):
             return True
 
         und_trans(label, x)
 
-        # isAdmissible(label)=true then return true
         if is_admissible(label):
             return True
         else:
@@ -38,28 +34,35 @@ def is_admissible(label):
 def propagate(label):
     while True:
         """Checks for an argument with label 'blank'.
-        Select some x with label(x) = blank such that for all 
-        y ∈ {x}− label(y) ∈ {out,mustOut}"""
+        Select some x with label(x) = blank such that for all the attackers of x
+        have the label 'out' or 'mustOut'
+        """
         candidates = [x for x in label if label[x] == 'blank']
 
         for x in candidates:
-            # Checks conditions for all y ∈ {x}− label(y) ∈ {out, mustOut}
+            """
+            Checks if all the arguments that attack x have the label 'out' or
+            'mustOut'.
+            """
             if all(label[y] in {'out', 'mustOut'} for y in [attacker for (attacker, attacked) in framework if attacked == x]):
                 in_trans(label, x)
                 break #the for loop, the while continues
         else:
-            """If there is no x with label(x) = blank such that for 
-            all y ∈ {x} − label(y) ∈ {out,mustOut} then halt."""
             return
 
 def in_trans(label, x):
     label[x] = 'in'
 
-    # For each y ∈ {x}+ do label(y) ← out.
+    """
+    Iterate over all the arguments that x attacks and update their label to 'out'.
+    """
     for y in [y for (attacker, y) in framework if attacker == x]:
         label[y] = 'out'
 
-    # For each y ∈ {x}- with label(y) != out do label(y) ← mustOut.
+    """
+    Iterate over all the attackers of x. If their label is not 'out' then,
+    update the labels to be 'mustOut'.
+    """
     for y in [attacker for (attacker, attacked) in framework if attacked == x]:
         if label[y] != 'out':
             label[y] = 'mustOut'
